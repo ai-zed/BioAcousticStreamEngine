@@ -659,6 +659,13 @@ a.gallery-credit, span.gallery-credit {
   transition: color 0.15s;
 }
 a.gallery-credit:hover { color: rgba(255,255,255,0.95); }
+.gallery-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.63rem;
+  color: var(--muted);
+  margin-top: 5px;
+}
 .gallery-info {
   padding: 8px 10px 10px;
 }

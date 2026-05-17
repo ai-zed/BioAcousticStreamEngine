@@ -462,8 +462,17 @@ function _creditLine(name) {
     : `<span class="gallery-credit">${text}</span>`;
 }
 
+function _fmtSeen(date, time) {
+  const timeStr = time ? time.slice(0, 5) : '';
+  const today = new Date().toISOString().slice(0, 10);
+  if (!date || date === today) return timeStr;
+  const d = new Date(date + 'T' + time);
+  const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  return `${d.getDate()} ${mon} ${timeStr}`;
+}
+
 function galleryCard(entry) {
-  const { det, count, bestConf } = entry;
+  const { det, count, bestConf, firstSeen, lastSeen } = entry;
   const pct = Math.round(bestConf * 100);
   const clf = CLASSIFIERS.find(c => c.key === det.classifier);
   const icon = clf ? clf.icon : '◈';
@@ -495,6 +504,10 @@ function galleryCard(entry) {
         <div class="gallery-meta">
           <span class="classifier-badge">${icon} ${det.classifier}</span>
           <span class="conf ${confClass(bestConf)}">${pct}%</span>
+        </div>
+        <div class="gallery-times">
+          <span title="First detected">⬆ ${firstSeen ? _fmtSeen(firstSeen.date, firstSeen.time) : '—'}</span>
+          <span title="Last detected">⬇ ${lastSeen  ? _fmtSeen(lastSeen.date,  lastSeen.time)  : '—'}</span>
         </div>
       </div>
     </div>`;
@@ -550,7 +563,7 @@ function _populateGalleryGrid() {
   const all = Object.values(state.gallery);
   const entries = all
     .filter(e => e.bestConf >= _galleryMinConf)
-    .sort((a, b) => a.det.species_common.localeCompare(b.det.species_common));
+    .sort((a, b) => (b.lastSeenTs || 0) - (a.lastSeenTs || 0));
 
   const countEl = document.getElementById('gallery-count');
   if (countEl) {
@@ -575,23 +588,21 @@ function _populateGalleryGrid() {
 function updateGallery(det) {
   const key = det.species_common;
   const existing = state.gallery[key];
+  const ts = new Date(det.date + 'T' + det.time).getTime();
   if (!existing) {
-    state.gallery[key] = { det, count: 1, bestConf: det.confidence };
-    _populateGalleryGrid();
+    state.gallery[key] = {
+      det, count: 1, bestConf: det.confidence,
+      firstSeen: { date: det.date, time: det.time },
+      lastSeen:  { date: det.date, time: det.time },
+      lastSeenTs: ts,
+    };
   } else {
     existing.count++;
     if (det.confidence > existing.bestConf) existing.bestConf = det.confidence;
-    const el = document.getElementById(_galleryItemId(key));
-    if (el) {
-      const countBadge = el.querySelector('.gallery-count');
-      if (countBadge) countBadge.textContent = `×${existing.count}`;
-      const confEl = el.querySelector('.conf');
-      if (confEl) {
-        confEl.textContent = Math.round(existing.bestConf * 100) + '%';
-        confEl.className = `conf ${confClass(existing.bestConf)}`;
-      }
-    }
+    existing.lastSeen  = { date: det.date, time: det.time };
+    existing.lastSeenTs = ts;
   }
+  _populateGalleryGrid();
 }
 
 /* ── Gallery image management ── */
