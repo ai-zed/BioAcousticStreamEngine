@@ -10,13 +10,17 @@ This project was born from a belief that technology can bring people closer to t
 
 ## Screenshots
 
-| Recording & Spectrogram | Schedule & Mic Selection |
+| Dashboard | Schedule |
 |---|---|
-| ![Recording & Spectrogram — live capture and waterfall view](docs/screenshots/Recording%20Spectogram.png) | ![Schedule & Mic Selection — listening windows and classifier-to-device assignment](docs/screenshots/Schedule%20and%20Mic%20Selection.png) |
+| ![Dashboard — live detection feed and VU meter](docs/screenshots/dashboard.png) | ![Schedule — listening windows and mic assignment](docs/screenshots/schedule.png) |
 
-<!-- More screenshots will appear here as PNGs are added to docs/screenshots/.
-     Suggested next captures: clips library, reports / CSV download, settings page.
-     See docs/screenshots/README.md for filename and format guidance. -->
+| Species Gallery | Image Management |
+|---|---|
+| ![Species Gallery — live photo grid with confidence filter](docs/screenshots/gallery.png) | ![Image Management — upload photos and edit credits](docs/screenshots/image_management.png) |
+
+| Clips Library | Reports |
+|---|---|
+| ![Clips — browse and play saved audio clips](docs/screenshots/clips.png) | ![Reports — detection history and CSV export](docs/screenshots/reports.png) |
 
 ---
 
@@ -31,6 +35,7 @@ This project was born from a belief that technology can bring people closer to t
 - **Session summaries** — per-window species totals with max and average confidence
 - **Live MQTT streaming** — every detection published as JSON in real time; direct or bridge connection; configurable via web UI
 - **Browser dashboard** — full web UI for live monitoring, schedule management, audio clips, reports, and settings
+- **Species gallery** — live photo grid that populates as species are detected; confidence filter, detection counts, CC attribution overlays; replace stock images with your own photographs via the built-in upload tool
 - **Extensible architecture** — insect and soil classifiers are structured and ready for model plug-ins
 
 ---
@@ -184,6 +189,7 @@ A browser tab opens automatically at `http://localhost:8000`. A desktop launcher
 | Page | Features |
 |---|---|
 | **Dashboard** | Live detection feed, real-time VU meter, per-device start/stop controls, today's species count and call totals |
+| **Gallery** | Live photo grid populated as species are detected; confidence threshold filter; detection counts; CC attribution overlays; upload your own images per species |
 | **Schedule** | Today's listening windows, add/remove custom windows, assign classifiers and microphones per organism group |
 | **Clips** | Browse saved audio clips by species and classifier, play in browser, delete clips |
 | **Reports** | Date and species filtering, daily summary table, download detections/sessions as CSV, clear all logs |
@@ -195,6 +201,35 @@ A browser tab opens automatically at `http://localhost:8000`. A desktop launcher
 .venv/bin/python -m ecoacoustics.main web --port 8080   # change port
 .venv/bin/python -m ecoacoustics.main web --no-browser  # don't auto-open browser
 ```
+
+---
+
+## Species Gallery
+
+The Gallery page builds a live photo grid as species are detected during a session. Each card shows a photograph of the species, its common and scientific name, classifier type, best confidence score, and a detection count. The grid updates in real time via WebSocket — no page refresh needed.
+
+![Species Gallery](docs/screenshots/gallery.png)
+
+### Stock images
+
+108 UK species images are bundled with BASE, sourced from [Wikimedia Commons](https://commons.wikimedia.org/) under open Creative Commons licences. Attribution is displayed as an overlay on each card and stored in `src/ecoacoustics/web/species_images/_credits.json`.
+
+### Replacing or adding images
+
+Any stock image can be replaced with your own photograph directly from the gallery:
+
+- **Cards with no image** show a "+ Add photo" button over the placeholder — click it to upload without leaving the gallery.
+- **Gallery → Manage Images** lets you upload a replacement for any species and edit the copyright attribution (author, licence, source URL).
+
+Accepted formats: JPEG, PNG, WebP. Images are saved into `src/ecoacoustics/web/species_images/` and served statically.
+
+### Confidence filter
+
+A slider in the gallery header filters cards by minimum confidence score (0–95% in 5% steps). The species count updates to show how many species are visible versus total detected. The threshold is remembered while navigating between pages.
+
+### MQTT image field
+
+Every MQTT detection payload includes a `species_image` field (e.g. `"european_robin.jpg"`) so downstream systems can display the matching photograph without needing to normalise the species name themselves.
 
 ---
 
