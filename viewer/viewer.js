@@ -460,6 +460,16 @@ async function previewSound(key, index) {
   audio.onended = () => URL.revokeObjectURL(url);
 }
 
+// ── About modal ──────────────────────────────────────────────────────────────
+
+function showAbout() {
+  document.getElementById('about-overlay').classList.add('open');
+}
+
+function hideAbout() {
+  document.getElementById('about-overlay').classList.remove('open');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {

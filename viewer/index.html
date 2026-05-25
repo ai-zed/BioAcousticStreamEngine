@@ -18,6 +18,7 @@
       </button>
       <div id="conn-dot" class="conn-dot disconnected" title="Disconnected"></div>
       <span id="conn-label">Disconnected</span>
+      <button class="icon-btn" onclick="showAbout()" title="About BASE">🌿</button>
       <button class="icon-btn" onclick="showSettings()" title="Settings">⚙</button>
     </div>
   </header>
@@ -78,6 +79,65 @@
       <button class="icon-btn" onclick="hideModal()">✕</button>
     </div>
     <div id="modal-body"></div>
+  </div>
+
+  <!-- About modal -->
+  <div id="about-overlay" onclick="hideAbout()">
+    <div id="about-modal" onclick="event.stopPropagation()">
+      <button class="about-close" onclick="hideAbout()">✕</button>
+
+      <div class="about-header">
+        <div class="about-logo">🌿</div>
+        <div>
+          <h2 class="about-title">BioAcoustic Stream Engine</h2>
+          <div class="about-subtitle">BASE &nbsp;·&nbsp; Viewer</div>
+        </div>
+      </div>
+
+      <p class="about-mission">
+        This project was conceived by the Blenheim Palace Innovation Team, combining our own
+        work with contributions from pre-trained models and open research. We are excited to
+        engage others and to learn together more about our natural world.
+      </p>
+
+      <div class="about-section-title">Created by</div>
+      <p class="about-creator">
+        <strong>David Green</strong> &mdash; Head of Innovation and AI, Blenheim Palace<br>
+        <span style="font-size:0.8rem;color:var(--muted)">
+          A belief that technology can bring people closer to the natural world — making
+          acoustic biodiversity monitoring open, accessible, and shareable.
+        </span>
+      </p>
+
+      <div class="about-section-title">Contributors</div>
+      <p style="font-size:0.85rem;color:var(--text);line-height:1.8;margin:0">
+        Harry Hanson &nbsp;·&nbsp; Tawhid Shahrior &nbsp;·&nbsp; Dr. Matthias Rolf &nbsp;·&nbsp;
+        Max Caminow &nbsp;·&nbsp; Dr. Dave Gasca &nbsp;·&nbsp; Arnaud Fontannaz &nbsp;·&nbsp; Filipe Salbany
+      </p>
+
+      <div class="about-section-title">Powered by</div>
+      <div class="about-credits">
+        <div class="about-credit-row">🐦 <strong>BirdNET-Analyzer</strong> &mdash; Cornell Lab of Ornithology &amp; TU Chemnitz</div>
+        <div class="about-credit-row">🦇 <strong>BatDetect2</strong> &mdash; University of Edinburgh, Caltech &amp; UCL</div>
+        <div class="about-credit-row">🐝 <strong>BuzzDetect v1.0.1</strong> &mdash; OSU Bee Lab, Ohio State University</div>
+        <div class="about-credit-row">🌱 <strong>Soil Acoustic Index</strong> &mdash; Blenheim Palace Innovation Team</div>
+      </div>
+
+      <div class="about-section-title">Contributor &amp; Inspiration</div>
+      <p style="font-size:0.82rem;color:var(--muted);margin:0">
+        <strong style="color:var(--text)">Dr. Curt Lamberth</strong> is both a contributor to and an
+        inspiration for this project. Originally trained as a chemist, Curt spent time in industry and
+        worked as an environmental consultant for twenty years. He now combines inventing electronic
+        gadgets, sensors and wireless systems with his passion for environmental conservation — with
+        specific interests in eco-hydrology, plants, micro-lepidoptera, and the application of
+        technology in science.
+      </p>
+
+      <div class="about-footer">
+        <span>MIT Licence &nbsp;·&nbsp; Open Source</span>
+        <a href="https://github.com/blenheiminnovation/BioAcousticStreamEngine" target="_blank" class="about-github">GitHub ↗</a>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
