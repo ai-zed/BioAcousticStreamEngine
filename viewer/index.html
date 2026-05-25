@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BASE Viewer</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+
+  <header id="header">
+    <div id="logo">
+      <span class="logo-base">BASE</span><span class="logo-viewer"> Viewer</span>
+    </div>
+    <div id="header-right">
+      <button id="sound-unlock-btn" class="btn btn-sm btn-outline" onclick="toggleSound()" title="Toggle live soundscape">
+        🔇 Sounds off
+      </button>
+      <div id="conn-dot" class="conn-dot disconnected" title="Disconnected"></div>
+      <span id="conn-label">Disconnected</span>
+      <button class="icon-btn" onclick="showSettings()" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div id="gallery-grid"></div>
+    <div id="empty-state">
+      <div class="empty-icon">◈</div>
+      <p>No detections yet</p>
+      <p class="hint">Open <strong>⚙ Settings</strong> to configure your MQTT feed</p>
+    </div>
+  </main>
+
+  <!-- Settings panel -->
+  <div id="settings-overlay" onclick="hideSettings()"></div>
+  <aside id="settings-panel">
+    <div class="panel-header">
+      <h2>Settings</h2>
+      <button class="icon-btn" onclick="hideSettings()">✕</button>
+    </div>
+    <form id="settings-form" onsubmit="applySettings(event)">
+      <div class="form-group">
+        <label>Broker WebSocket URL</label>
+        <input type="text" id="s-url" placeholder="wss://u1d78101.ala.eu-central-1.emqxsl.com:8084/mqtt" spellcheck="false" oninput="checkBrokerUrl()">
+        <small>EMQX WebSocket: <strong>wss://u1d78101.ala.eu-central-1.emqxsl.com:8084/mqtt</strong><br>Port 8883 is TCP-only and won't work in a browser.</small>
+        <div id="url-warn" style="display:none;margin-top:6px;padding:7px 10px;background:rgba(210,153,34,0.15);border:1px solid var(--warning);border-radius:var(--radius);font-size:0.75rem;color:var(--warning);line-height:1.5"></div>
+      </div>
+      <div class="form-group">
+        <label>Topic prefix</label>
+        <input type="text" id="s-prefix" placeholder="bioacoustics">
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="s-username" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="s-password" autocomplete="off">
+      </div>
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" id="s-autoconnect">
+          Connect automatically on startup
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="disconnect()">Disconnect</button>
+        <button type="submit" class="btn btn-primary">Save &amp; Connect</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Species detail modal -->
+  <div id="modal-overlay" onclick="hideModal()"></div>
+  <div id="species-modal">
+    <div class="panel-header">
+      <h2 id="modal-title"></h2>
+      <button class="icon-btn" onclick="hideModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+
+  <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>
