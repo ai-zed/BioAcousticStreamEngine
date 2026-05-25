@@ -140,6 +140,7 @@ class AudioCapture:
         self._overflow_count: int = 0   # sounddevice input overflow events
         self._chunk_start_time: float = 0.0  # wall time when current chunk accumulation began
         self._last_rms: float = 0.0     # RMS of the most recent callback frame
+        self._last_nonsilent_time: float = 0.0  # last time RMS exceeded silence floor
 
     # ------------------------------------------------------------------
     # Public API
@@ -160,8 +161,9 @@ class AudioCapture:
                     callback=self._callback,
                 )
                 self._stream.start()
-                self._last_chunk_time = 0.0    # reset so watchdog measures from now
-                self._chunk_start_time = 0.0   # will be set on first callback
+                self._last_chunk_time = 0.0       # reset so watchdog measures from now
+                self._chunk_start_time = 0.0      # will be set on first callback
+                self._last_nonsilent_time = 0.0   # reset silence tracker on new stream
                 self._started_at = time.time()
                 return
             except Exception as exc:
@@ -278,6 +280,16 @@ class AudioCapture:
         """RMS amplitude of the most recently received audio frame (updated every callback)."""
         return self._last_rms
 
+    @property
+    def last_nonsilent_time(self) -> float:
+        """Unix timestamp of the last callback frame with RMS above the silence floor.
+
+        Stays 0.0 until the stream produces its first non-silent frame.  The
+        Watchdog uses this to detect when PipeWire is delivering silence for a
+        disconnected device (the stream stays "active" but all samples are zero).
+        """
+        return self._last_nonsilent_time
+
     # ------------------------------------------------------------------
     # Internal callback (runs in sounddevice thread)
     # ------------------------------------------------------------------
@@ -297,6 +309,10 @@ class AudioCapture:
         mono = indata[:, 0] if indata.ndim > 1 else indata.ravel()
         self._last_rms = float(np.sqrt(np.mean(mono ** 2)))
         now = time.time()
+        # Track last non-silent frame so the watchdog can detect PipeWire silence-fill
+        # after a device disconnect (stream stays active but delivers exact zeros).
+        if self._last_rms > 1e-6:
+            self._last_nonsilent_time = now
 
         with self._lock:
             if len(self._buffer) == 0:

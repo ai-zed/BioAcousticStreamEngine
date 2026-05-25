@@ -131,22 +131,45 @@ class Watchdog(threading.Thread):
             self._last_dropped[sr] = new_dropped
 
     def _check_streams(self) -> None:
-        """Restart any audio stream that has been silent longer than STREAM_STALE_SECS.
+        """Restart any audio stream that has gone stale or is delivering silence.
 
-        Also catches streams that opened but never delivered a single chunk (e.g. wrong
-        device selected, suspended PipeWire source) by measuring from the stream start
-        time when last_chunk_time is still 0.
+        Two failure modes are detected:
+        1. No chunks received for STREAM_STALE_SECS — stream callback has stopped
+           (device hard-disconnected or crashed).
+        2. Chunks arriving but RMS is at the silence floor for STREAM_STALE_SECS —
+           PipeWire is delivering zeros to keep the stream alive after a device unplug
+           rather than terminating it.
         """
         now = time.time()
         for sr, capture in self._captures.items():
             last = capture.last_chunk_time
-            # Use start time as reference when no chunk has arrived yet
             reference = last if last > 0.0 else capture.started_at
             if reference == 0.0:
                 continue  # stream hasn't been opened yet
+
+            needs_restart = False
+            reason = ""
+
             stale = now - reference
             if stale > STREAM_STALE_SECS:
-                reason = "no chunks ever received" if last == 0.0 else f"silent for {stale:.0f}s"
+                needs_restart = True
+                reason = "no chunks ever received" if last == 0.0 else f"no chunks for {stale:.0f}s"
+            else:
+                # Stream is delivering chunks — check if they contain any real signal.
+                # PipeWire fills with exact zeros when the source device is unplugged.
+                nonsilent = capture.last_nonsilent_time
+                started = capture.started_at
+                # Reference for silence: last non-silent frame, or stream start if none yet
+                silence_ref = nonsilent if nonsilent > 0.0 else started
+                stream_age = now - started if started > 0.0 else 0.0
+                # Only trigger after stream has had time to produce audio
+                if stream_age > STREAM_STALE_SECS and silence_ref > 0.0:
+                    silent_for = now - silence_ref
+                    if silent_for > STREAM_STALE_SECS:
+                        needs_restart = True
+                        reason = f"delivering silence for {silent_for:.0f}s — device may have disconnected"
+
+            if needs_restart:
                 _console.print(
                     f"[yellow][watchdog] {sr}Hz stream stale ({reason}) "
                     f"— attempting restart[/yellow]"
