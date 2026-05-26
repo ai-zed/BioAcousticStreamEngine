@@ -475,6 +475,21 @@ function hideAbout() {
 async function init() {
   db = await openDb();
   await preloadImageCache();
+
+  // URL params override stored settings — useful for kiosk/Yodeck deployments
+  // where you can't interact with the settings panel.
+  // e.g. ?broker=wss://host:8084/mqtt&username=base&password=secret&prefix=bioacoustics
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('broker')) {
+    saveSettings({
+      brokerUrl:   params.get('broker'),
+      topicPrefix: params.get('prefix')   || 'bioacoustics',
+      username:    params.get('username') || '',
+      password:    params.get('password') || '',
+      autoConnect: true,
+    });
+  }
+
   const s = loadSettings();
   if (s.autoConnect && s.brokerUrl) connect();
 }
