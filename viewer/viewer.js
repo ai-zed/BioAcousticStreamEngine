@@ -18,9 +18,11 @@ const PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
 
 const gallery   = {};   // speciesCommon → entry
 const imgCache  = {};   // speciesKey    → object URL (or PLACEHOLDER)
-let activeAudio  = 0;
-let soundEnabled = true;
-const playingNow = new Set(); // species keys currently playing — one stream per species
+let activeAudio   = 0;
+let soundEnabled  = true;
+let audioCtx      = null;     // Web Audio API context — must be created from a user gesture
+const playingNow  = new Set();
+const bufferCache = {};       // default asset url → decoded AudioBuffer
 let mqttClient  = null;
 let db          = null;
 
@@ -264,8 +266,23 @@ function galleryCard(entry) {
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
 
+function _unlockAudioContext() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  // Play a silent buffer — required to fully unlock on iOS
+  const buf = audioCtx.createBuffer(1, 1, 22050);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
+}
+
 function toggleSound() {
   soundEnabled = !soundEnabled;
+  if (soundEnabled) _unlockAudioContext();  // user gesture — unlock iOS audio here
   _updateSoundBtn();
 }
 
@@ -282,43 +299,42 @@ function _updateSoundBtn() {
 }
 
 async function playDetectionSound(key) {
-  if (!soundEnabled) return;
+  if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
   if (playingNow.has(key)) return;
   if (activeAudio >= MAX_SIMULTANEOUS_AUDIO) return;
 
-  let url, isObjectUrl = false;
   try {
+    let audioBuffer;
     const record = await dbGet('sounds', key);
+
     if (record?.clips?.length) {
+      // User-uploaded: decode a copy (decodeAudioData detaches the ArrayBuffer)
       const clip = record.clips[Math.floor(Math.random() * record.clips.length)];
-      const blob = new Blob([clip.data], { type: clip.mime || 'audio/mpeg' });
-      url = URL.createObjectURL(blob);
-      isObjectUrl = true;
+      audioBuffer = await audioCtx.decodeAudioData(clip.data.slice(0));
     } else {
-      url = 'assets/sounds/' + key + '.mp3';
+      // Default asset: fetch once and cache the decoded buffer
+      const assetUrl = 'assets/sounds/' + key + '.mp3';
+      if (!bufferCache[assetUrl]) {
+        const resp = await fetch(assetUrl);
+        if (!resp.ok) return;
+        bufferCache[assetUrl] = await audioCtx.decodeAudioData(await resp.arrayBuffer());
+      }
+      audioBuffer = bufferCache[assetUrl];
     }
 
-    const audio = new Audio(url);
-    audio.volume = 0.65;
-
-    // Only reserve a slot after play() actually starts — avoids counter corruption
-    // if the browser blocks autoplay or the file is missing.
-    await audio.play();
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.65;
+    source.connect(gain);
+    gain.connect(audioCtx.destination);
 
     activeAudio++;
     playingNow.add(key);
+    source.onended = () => { activeAudio--; playingNow.delete(key); };
+    source.start(0);
 
-    const release = () => {
-      activeAudio--;
-      playingNow.delete(key);
-      if (isObjectUrl) URL.revokeObjectURL(url);
-    };
-    audio.onended = release;
-    audio.onerror = release;
-
-  } catch {
-    if (isObjectUrl && url) URL.revokeObjectURL(url);
-  }
+  } catch { /* file missing or decode error — skip silently */ }
 }
 
 // ── Settings UI ──────────────────────────────────────────────────────────────
