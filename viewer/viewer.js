@@ -18,10 +18,10 @@ const PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
 
 const gallery   = {};   // speciesCommon → entry
 const imgCache  = {};   // speciesKey    → object URL (or PLACEHOLDER)
-let activeAudio   = 0;
-let audioUnlocked = false;
-let soundEnabled  = false;
-const playingNow  = new Set(); // species keys currently playing — one stream per species
+let activeAudio  = 0;
+let audioReady   = false;  // true after first user gesture, or sounds=on URL param (kiosk)
+let soundEnabled = true;   // user mute preference — on by default
+const playingNow = new Set(); // species keys currently playing — one stream per species
 let mqttClient  = null;
 let db          = null;
 
@@ -266,8 +266,12 @@ function galleryCard(entry) {
 // ── Audio ─────────────────────────────────────────────────────────────────────
 
 function toggleSound() {
-  audioUnlocked = true;  // satisfies browser autoplay policy on first click
-  soundEnabled  = !soundEnabled;
+  audioReady   = true;  // clicking counts as the required user gesture
+  soundEnabled = !soundEnabled;
+  _updateSoundBtn();
+}
+
+function _updateSoundBtn() {
   const btn = document.getElementById('sound-unlock-btn');
   if (!btn) return;
   if (soundEnabled) {
@@ -280,7 +284,7 @@ function toggleSound() {
 }
 
 async function playDetectionSound(key) {
-  if (!audioUnlocked || !soundEnabled) return;
+  if (!audioReady || !soundEnabled) return;
   if (playingNow.has(key)) return;             // this species already playing
   if (activeAudio >= MAX_SIMULTANEOUS_AUDIO) return;  // global cap
 
@@ -502,12 +506,13 @@ async function init() {
     });
   }
 
-  if (params.get('sounds') === 'on') {
-    audioUnlocked = true;
-    soundEnabled  = true;
-    const btn = document.getElementById('sound-unlock-btn');
-    if (btn) { btn.textContent = '🔊 Sounds on'; btn.classList.add('sound-on'); }
-  }
+  // Kiosk / Yodeck: sounds=on bypasses the user-gesture requirement entirely
+  if (params.get('sounds') === 'on') audioReady = true;
+
+  // Regular browser: unlock on first interaction anywhere on the page
+  document.addEventListener('pointerdown', () => { audioReady = true; }, { once: true });
+
+  _updateSoundBtn();
 
   const s = loadSettings();
   if (s.autoConnect && s.brokerUrl) connect();
