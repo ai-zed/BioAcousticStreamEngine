@@ -19,8 +19,7 @@ const PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
 const gallery   = {};   // speciesCommon → entry
 const imgCache  = {};   // speciesKey    → object URL (or PLACEHOLDER)
 let activeAudio  = 0;
-let audioReady   = false;  // true after first user gesture, or sounds=on URL param (kiosk)
-let soundEnabled = true;   // user mute preference — on by default
+let soundEnabled = true;
 const playingNow = new Set(); // species keys currently playing — one stream per species
 let mqttClient  = null;
 let db          = null;
@@ -266,7 +265,6 @@ function galleryCard(entry) {
 // ── Audio ─────────────────────────────────────────────────────────────────────
 
 function toggleSound() {
-  audioReady   = true;  // clicking counts as the required user gesture
   soundEnabled = !soundEnabled;
   _updateSoundBtn();
 }
@@ -284,9 +282,9 @@ function _updateSoundBtn() {
 }
 
 async function playDetectionSound(key) {
-  if (!audioReady || !soundEnabled) return;
-  if (playingNow.has(key)) return;             // this species already playing
-  if (activeAudio >= MAX_SIMULTANEOUS_AUDIO) return;  // global cap
+  if (!soundEnabled) return;
+  if (playingNow.has(key)) return;
+  if (activeAudio >= MAX_SIMULTANEOUS_AUDIO) return;
 
   let url, isObjectUrl = false;
   try {
@@ -302,18 +300,25 @@ async function playDetectionSound(key) {
 
     const audio = new Audio(url);
     audio.volume = 0.65;
+
+    // Only reserve a slot after play() actually starts — avoids counter corruption
+    // if the browser blocks autoplay or the file is missing.
+    await audio.play();
+
     activeAudio++;
     playingNow.add(key);
 
-    const cleanup = () => {
+    const release = () => {
       activeAudio--;
       playingNow.delete(key);
       if (isObjectUrl) URL.revokeObjectURL(url);
     };
-    audio.onended  = cleanup;
-    audio.onerror  = cleanup;
-    audio.play().catch(cleanup);
-  } catch { }
+    audio.onended = release;
+    audio.onerror = release;
+
+  } catch {
+    if (isObjectUrl && url) URL.revokeObjectURL(url);
+  }
 }
 
 // ── Settings UI ──────────────────────────────────────────────────────────────
@@ -505,12 +510,6 @@ async function init() {
       autoConnect: true,
     });
   }
-
-  // Kiosk / Yodeck: sounds=on bypasses the user-gesture requirement entirely
-  if (params.get('sounds') === 'on') audioReady = true;
-
-  // Regular browser: unlock on first interaction anywhere on the page
-  document.addEventListener('pointerdown', () => { audioReady = true; }, { once: true });
 
   _updateSoundBtn();
 
