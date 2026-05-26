@@ -18,9 +18,10 @@ const PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
 
 const gallery   = {};   // speciesCommon → entry
 const imgCache  = {};   // speciesKey    → object URL (or PLACEHOLDER)
-let activeAudio = 0;
+let activeAudio   = 0;
 let audioUnlocked = false;
 let soundEnabled  = false;
+const playingNow  = new Set(); // species keys currently playing — one stream per species
 let mqttClient  = null;
 let db          = null;
 
@@ -279,10 +280,13 @@ function toggleSound() {
 }
 
 async function playDetectionSound(key) {
-  if (!audioUnlocked || !soundEnabled || activeAudio >= MAX_SIMULTANEOUS_AUDIO) return;
+  if (!audioUnlocked || !soundEnabled) return;
+  if (playingNow.has(key)) return;             // this species already playing
+  if (activeAudio >= MAX_SIMULTANEOUS_AUDIO) return;  // global cap
+
+  let url, isObjectUrl = false;
   try {
     const record = await dbGet('sounds', key);
-    let url, isObjectUrl = false;
     if (record?.clips?.length) {
       const clip = record.clips[Math.floor(Math.random() * record.clips.length)];
       const blob = new Blob([clip.data], { type: clip.mime || 'audio/mpeg' });
@@ -291,12 +295,20 @@ async function playDetectionSound(key) {
     } else {
       url = 'assets/sounds/' + key + '.mp3';
     }
+
     const audio = new Audio(url);
     audio.volume = 0.65;
     activeAudio++;
-    audio.play().catch(() => { activeAudio--; });
-    audio.onended  = () => { activeAudio--; if (isObjectUrl) URL.revokeObjectURL(url); };
-    audio.onerror  = () => { activeAudio--; };
+    playingNow.add(key);
+
+    const cleanup = () => {
+      activeAudio--;
+      playingNow.delete(key);
+      if (isObjectUrl) URL.revokeObjectURL(url);
+    };
+    audio.onended  = cleanup;
+    audio.onerror  = cleanup;
+    audio.play().catch(cleanup);
   } catch { }
 }
 
@@ -488,6 +500,13 @@ async function init() {
       password:    params.get('password') || '',
       autoConnect: true,
     });
+  }
+
+  if (params.get('sounds') === 'on') {
+    audioUnlocked = true;
+    soundEnabled  = true;
+    const btn = document.getElementById('sound-unlock-btn');
+    if (btn) { btn.textContent = '🔊 Sounds on'; btn.classList.add('sound-on'); }
   }
 
   const s = loadSettings();
