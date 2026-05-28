@@ -138,6 +138,40 @@ body {
 }
 .footer-divider { opacity: 0.5; }
 
+/* ── Explainer tile ── */
+
+#explainer-tile {
+  position: fixed;
+  bottom: 44px;
+  right: 16px;
+  width: 272px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  z-index: 90;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+.explainer-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.explainer-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.explainer-section:last-child { margin-bottom: 0; }
+.explainer-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.explainer-section strong { color: var(--text); }
+
 /* ── Gallery grid ── */
 
 #main { padding: 20px; padding-bottom: 48px; }

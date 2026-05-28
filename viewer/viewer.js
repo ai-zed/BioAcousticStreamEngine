@@ -580,6 +580,9 @@ async function init() {
   const locEl = document.getElementById('live-loc-text');
   if (locEl) locEl.textContent = locationFilter || 'Monitoring';
 
+  const yearEl = document.getElementById('footer-year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+
   loadGalleryFromStorage();
   renderGallery();
 
