@@ -124,7 +124,8 @@ body {
   left: 0;
   right: 0;
   z-index: 100;
-  background: var(--primary);
+  background: #1a3352;
+  border-top: 1px solid #2a4a72;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,15 +143,16 @@ body {
 
 #explainer-tile {
   position: fixed;
-  bottom: 44px;
+  bottom: 42px;
   right: 16px;
   width: 272px;
-  background: var(--surface);
+  background: var(--surface2);
   border: 1px solid var(--border);
+  border-top: 2px solid var(--primary);
   border-radius: var(--radius);
   padding: 14px 16px;
-  z-index: 90;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  z-index: 150;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
 }
 .explainer-title {
   font-size: 0.78rem;
