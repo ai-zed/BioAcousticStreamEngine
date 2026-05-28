@@ -145,34 +145,42 @@ body {
   position: fixed;
   bottom: 42px;
   right: 16px;
-  width: 272px;
-  background: var(--surface2);
+  width: 240px;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-top: 2px solid var(--primary);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  overflow: hidden;
   z-index: 150;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
 }
-.explainer-title {
-  font-size: 0.78rem;
+.explainer-header {
+  background: var(--surface2);
+  padding: 8px 10px;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
 }
+.explainer-body { padding: 10px; }
 .explainer-section {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  font-size: 0.74rem;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 8px;
+  font-size: 0.70rem;
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.45;
 }
 .explainer-section:last-child { margin-bottom: 0; }
-.explainer-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
-.explainer-section strong { color: var(--text); }
+.explainer-dot {
+  color: var(--primary);
+  font-size: 0.55rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.explainer-section strong { color: var(--text); display: block; font-size: 0.72rem; }
 
 /* ── Gallery grid ── */
 
