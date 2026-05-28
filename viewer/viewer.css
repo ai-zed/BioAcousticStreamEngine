@@ -6,6 +6,7 @@
   --text:     #e6edf3;
   --muted:    #768390;
   --primary:  #388bfd;
+  --brand:    #003d4c;
   --success:  #3fb950;
   --warning:  #d29922;
   --danger:   #f85149;
@@ -124,8 +125,8 @@ body {
   left: 0;
   right: 0;
   z-index: 100;
-  background: #1a3352;
-  border-top: 1px solid #2a4a72;
+  background: var(--brand);
+  border-top: 1px solid #005a6e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -154,14 +155,14 @@ body {
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
 }
 .explainer-header {
-  background: var(--surface2);
+  background: var(--brand);
   padding: 8px 10px;
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--text);
+  color: #fff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #005a6e;
 }
 .explainer-body { padding: 10px; }
 .explainer-section {
