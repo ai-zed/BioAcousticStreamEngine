@@ -142,6 +142,17 @@ body {
 
 /* ── Explainer tile ── */
 
+#explainer-btn { display: none; }
+
+#explainer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 210;
+}
+#explainer-overlay.open { display: block; }
+
 #explainer-tile {
   position: fixed;
   bottom: 42px;
@@ -153,6 +164,22 @@ body {
   overflow: hidden;
   z-index: 150;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+@media (max-width: 600px) {
+  #explainer-btn { display: flex; }
+  #explainer-tile {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    bottom: auto;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: min(320px, 88vw);
+    z-index: 220;
+  }
+  #explainer-tile.open { display: block; }
 }
 .explainer-header {
   background: var(--brand);

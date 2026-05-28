@@ -22,6 +22,7 @@
       </button>
       <div id="conn-dot" class="conn-dot disconnected" title="Disconnected"></div>
       <span id="conn-label">Disconnected</span>
+      <button class="icon-btn" id="explainer-btn" onclick="toggleExplainer()" title="How it works">ℹ</button>
       <button class="icon-btn" onclick="showAbout()" title="About BASE">🌿</button>
       <button class="icon-btn" onclick="showSettings()" title="Settings">⚙</button>
     </div>
@@ -149,6 +150,9 @@
     <span class="footer-divider">·</span>
     <span>Blenheim Palace Innovation Team <span id="footer-year"></span></span>
   </footer>
+
+  <!-- Explainer overlay (mobile) -->
+  <div id="explainer-overlay" onclick="toggleExplainer()"></div>
 
   <!-- Explainer tile -->
   <div id="explainer-tile">

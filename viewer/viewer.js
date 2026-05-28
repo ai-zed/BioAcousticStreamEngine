@@ -537,6 +537,15 @@ async function previewSound(key, index) {
   audio.onended = () => URL.revokeObjectURL(url);
 }
 
+// ── Explainer modal (mobile) ─────────────────────────────────────────────────
+
+function toggleExplainer() {
+  const tile    = document.getElementById('explainer-tile');
+  const overlay = document.getElementById('explainer-overlay');
+  const open    = tile.classList.toggle('open');
+  overlay.classList.toggle('open', open);
+}
+
 // ── About modal ──────────────────────────────────────────────────────────────
 
 function showAbout() {
