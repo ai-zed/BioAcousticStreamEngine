@@ -26,6 +26,7 @@ const bufferCache = {};       // default asset url → decoded AudioBuffer
 let mqttClient  = null;
 let db          = null;
 let probabilityThreshold = 0; // 0.0–1.0; set via &probability=N URL param
+let locationFilter = '';      // set via &location=Name URL param
 
 // ── Settings (localStorage) ──────────────────────────────────────────────────
 
@@ -182,10 +183,12 @@ function disconnect() {
 }
 
 function setConnStatus(state, label) {
-  const dot = document.getElementById('conn-dot');
-  const lbl = document.getElementById('conn-label');
-  if (dot) dot.className = 'conn-dot ' + state;
-  if (lbl) lbl.textContent = label;
+  const dot   = document.getElementById('conn-dot');
+  const lbl   = document.getElementById('conn-label');
+  const badge = document.getElementById('live-badge');
+  if (dot)   dot.className = 'conn-dot ' + state;
+  if (lbl)   lbl.textContent = label;
+  if (badge) badge.classList.toggle('live-on', state === 'connected');
 }
 
 // ── Gallery ──────────────────────────────────────────────────────────────────
@@ -222,6 +225,7 @@ function renderGallery(flashName) {
 
   const entries = Object.values(gallery)
     .filter(e => e.bestConf >= probabilityThreshold)
+    .filter(e => !locationFilter || (e.det.location_name || '').toLowerCase() === locationFilter.toLowerCase())
     .sort((a, b) => (b.lastSeenTs || 0) - (a.lastSeenTs || 0));
 
   if (!entries.length) {
@@ -258,7 +262,8 @@ function galleryCard(entry) {
       <div class="card-info">
         <div class="card-name">${det.species_common}</div>
         <div class="card-sci">${det.species_scientific || ''}</div>
-        <div class="card-clf">${det.classifier || ''} · ${det.location_name || ''}</div>
+        <div class="card-clf">${det.classifier || ''}</div>
+        ${det.location_name ? `<div class="card-location">◉ ${det.location_name}</div>` : ''}
         <div class="card-times">
           <span title="First detected">⬆ ${_fmtSeen(firstSeen?.date, firstSeen?.time)}</span>
           <span title="Last detected">⬇ ${_fmtSeen(lastSeen?.date,  lastSeen?.time)}</span>
@@ -555,6 +560,13 @@ async function init() {
     const pct = Math.min(100, Math.max(0, parseInt(params.get('probability'), 10) || 0));
     probabilityThreshold = pct / 100;
   }
+
+  if (params.has('location')) {
+    locationFilter = params.get('location');
+  }
+
+  const locEl = document.getElementById('live-loc-text');
+  if (locEl) locEl.textContent = locationFilter || 'Monitoring';
 
   loadGalleryFromStorage();
   renderGallery();
