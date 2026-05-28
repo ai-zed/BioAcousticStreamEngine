@@ -116,9 +116,30 @@ body {
 }
 .icon-btn:hover { background: var(--surface2); }
 
+/* ── Footer ── */
+
+#attribution-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 20px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+.footer-divider { opacity: 0.4; }
+
 /* ── Gallery grid ── */
 
-#main { padding: 20px; }
+#main { padding: 20px; padding-bottom: 48px; }
 
 #gallery-grid {
   display: grid;
