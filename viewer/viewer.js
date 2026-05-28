@@ -25,6 +25,7 @@ const playingNow  = new Set();
 const bufferCache = {};       // default asset url → decoded AudioBuffer
 let mqttClient  = null;
 let db          = null;
+let probabilityThreshold = 0; // 0.0–1.0; set via &probability=N URL param
 
 // ── Settings (localStorage) ──────────────────────────────────────────────────
 
@@ -209,6 +210,7 @@ function updateGallery(det) {
     e.lastSeenTs = ts;
   }
 
+  saveGalleryToStorage();
   renderGallery(name);
   playDetectionSound(key);
 }
@@ -219,6 +221,7 @@ function renderGallery(flashName) {
   if (!grid) return;
 
   const entries = Object.values(gallery)
+    .filter(e => e.bestConf >= probabilityThreshold)
     .sort((a, b) => (b.lastSeenTs || 0) - (a.lastSeenTs || 0));
 
   if (!entries.length) {
@@ -262,6 +265,27 @@ function galleryCard(entry) {
         </div>
       </div>
     </div>`;
+}
+
+// ── Daily gallery persistence (localStorage) ─────────────────────────────────
+
+function _todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function saveGalleryToStorage() {
+  try {
+    localStorage.setItem('base-viewer-gallery', JSON.stringify({ date: _todayKey(), gallery }));
+  } catch { /* storage full or unavailable */ }
+}
+
+function loadGalleryFromStorage() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('base-viewer-gallery') || 'null');
+    if (stored?.date === _todayKey() && stored.gallery) {
+      Object.assign(gallery, stored.gallery);
+    }
+  } catch { /* corrupt data — start fresh */ }
 }
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
@@ -526,6 +550,14 @@ async function init() {
       autoConnect: true,
     });
   }
+
+  if (params.has('probability')) {
+    const pct = Math.min(100, Math.max(0, parseInt(params.get('probability'), 10) || 0));
+    probabilityThreshold = pct / 100;
+  }
+
+  loadGalleryFromStorage();
+  renderGallery();
 
   _updateSoundBtn();
 
