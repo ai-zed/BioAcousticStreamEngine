@@ -124,18 +124,19 @@ body {
   left: 0;
   right: 0;
   z-index: 100;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 7px 20px;
-  font-size: 0.72rem;
-  color: var(--muted);
+  padding: 8px 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
   letter-spacing: 0.03em;
+  text-align: center;
 }
-.footer-divider { opacity: 0.4; }
+.footer-divider { opacity: 0.5; }
 
 /* ── Gallery grid ── */
 
