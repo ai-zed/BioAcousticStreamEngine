@@ -227,6 +227,7 @@ body {
   .explainer-dot { display: inline; color: var(--primary); font-size: 0.55rem; opacity: 0.7; margin-right: 4px; }
 }
 .explainer-section strong { color: var(--text); display: block; font-size: 0.72rem; }
+.explainer-why { border-left: 2px solid var(--brand); background: rgba(0,61,76,0.12); }
 
 /* ── Gallery grid ── */
 
