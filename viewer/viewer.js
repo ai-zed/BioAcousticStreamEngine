@@ -27,6 +27,7 @@ let mqttClient  = null;
 let db          = null;
 let probabilityThreshold = 0; // 0.0–1.0; set via &probability=N URL param
 let locationFilter = '';      // set via &location=Name URL param
+const imageVariants = {};     // key → count of available images (from manifest.json)
 
 // ── Settings (localStorage) ──────────────────────────────────────────────────
 
@@ -110,7 +111,17 @@ async function preloadImageCache() {
 }
 
 function _imgSrc(key) {
-  return imgCache[key] || ('assets/images/' + key + '.jpg');
+  if (imgCache[key]) return imgCache[key];
+  const count = imageVariants[key] || 1;
+  const n = count > 1 ? Math.floor(Math.random() * count) + 1 : 1;
+  return n === 1 ? 'assets/images/' + key + '.jpg' : 'assets/images/' + key + '_' + n + '.jpg';
+}
+
+async function loadImageManifest() {
+  try {
+    const resp = await fetch('assets/images/manifest.json');
+    if (resp.ok) Object.assign(imageVariants, await resp.json());
+  } catch { /* no manifest — single images only */ }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -541,6 +552,7 @@ function hideAbout() {
 async function init() {
   db = await openDb();
   await preloadImageCache();
+  await loadImageManifest();
 
   // URL params override stored settings — useful for kiosk/Yodeck deployments
   // where you can't interact with the settings panel.
