@@ -36,7 +36,6 @@ class MicModel(BaseModel):
     name: str
     latitude: float
     longitude: float
-    device: Optional[str] = None
 
 
 class ClassifierDevicesModel(BaseModel):

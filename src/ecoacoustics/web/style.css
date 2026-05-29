@@ -343,11 +343,14 @@ tr:hover td { background: var(--surface2); }
 .device-status.running { color: var(--primary); }
 .device-status.idle { color: var(--muted); }
 .device-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.device-actions select {
+.device-actions select,
+.device-loc-select {
   padding: 5px 8px; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); color: var(--text); font-size: 0.78rem;
   font-family: var(--font);
 }
+.device-loc-select { color: var(--muted); min-width: 140px; }
+.device-loc-select:has(option[value=""]:not(:checked)) { color: var(--text); }
 
 /* ── Help icon ── */
 .help-icon {

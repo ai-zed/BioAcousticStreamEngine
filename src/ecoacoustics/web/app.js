@@ -296,19 +296,24 @@ async function refreshDevicePanel() {
   const panel = document.getElementById('device-panel');
   if (!panel) return;
   try {
-    const [devData, statusData] = await Promise.all([
+    const [devData, statusData, micsData] = await Promise.all([
       api.get('/api/devices'),
       state.status ? Promise.resolve(state.status) : api.get('/api/status'),
+      api.get('/api/settings/mics').catch(() => []),
     ]);
     const pipelines = statusData.pipelines || {};
+    const deviceLocs = _loadDeviceLocs();
 
     if (!devData.devices.length) {
       panel.innerHTML = '<div class="empty">No audio input devices found. Check that a microphone is connected.</div>';
       return;
     }
 
+    const locOptions = micsData.length
+      ? '<option value="">No location</option>' + micsData.map(m => `<option value="${escHtml(m.name)}">${escHtml(m.name)}</option>`).join('')
+      : null;
+
     panel.innerHTML = `<div class="device-grid">${devData.devices.map(d => {
-      // Use the source name as the pipeline key so each physical mic gets its own slot
       const key = d.is_default ? 'default' : `src_${d.index}`;
       const pip = pipelines[key];
       const isRunning = pip && pip.state !== 'idle';
@@ -317,12 +322,17 @@ async function refreshDevicePanel() {
       const stateTag = d.state === 'RUNNING' ? '<span style="color:var(--primary)">● active</span>'
                      : d.state === 'SUSPENDED' ? '<span style="color:var(--muted)">○ suspended</span>'
                      : '';
+      const assignedLoc = deviceLocs[key] || '';
+      const locSelector = locOptions
+        ? `<select class="device-loc-select" title="Monitoring location" onchange="_saveDeviceLoc('${key}',this.value)">${locOptions.replace(`value="${escHtml(assignedLoc)}"`, `value="${escHtml(assignedLoc)}" selected`)}</select>`
+        : '';
       return `
         <div class="device-row ${isRunning ? 'running' : ''}">
           <div class="device-info">
             <div class="device-name">${d.is_default ? '★ ' : ''}${d.label || d.name}</div>
-            <div class="device-meta">${d.channels}ch · ${hz}kHz · ${stateTag}</div>
+            <div class="device-meta">${d.channels}ch · ${hz}kHz${stateTag ? ' · ' : ''}${stateTag}</div>
           </div>
+          ${locSelector}
           <div class="device-status ${isRunning ? 'running' : 'idle'}">
             ${isRunning ? `● ${pip.state} — ${pip.window || ''}` : '○ Idle'}
           </div>
@@ -345,6 +355,17 @@ async function refreshDevicePanel() {
   } catch (err) {
     panel.innerHTML = `<div class="empty" style="color:var(--danger)">${err.message}</div>`;
   }
+}
+
+function _loadDeviceLocs() {
+  try { return JSON.parse(localStorage.getItem('base-device-locs') || '{}'); }
+  catch { return {}; }
+}
+
+function _saveDeviceLoc(key, loc) {
+  const locs = _loadDeviceLocs();
+  if (loc) locs[key] = loc; else delete locs[key];
+  localStorage.setItem('base-device-locs', JSON.stringify(locs));
 }
 
 async function startDevice(deviceKey, deviceName, deviceIndex, btn) {
@@ -1293,14 +1314,6 @@ async function renderSettings() {
       <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">
         Used for BirdNET species filtering, CSV logs, and MQTT detection messages.
       </p>
-      <div class="form-row" id="loc-mic-row" style="display:none;margin-bottom:4px">
-        <div class="form-group" style="flex:1">
-          <label>Pick from configured mics</label>
-          <select id="loc-mic-select">
-            <option value="">— select a microphone —</option>
-          </select>
-        </div>
-      </div>
       <div class="form-row">
         <div class="form-group" style="flex:2">
           <label>Location Name</label>
@@ -1425,12 +1438,6 @@ async function renderSettings() {
             <input type="number" id="mic-f-lon" step="0.0001" placeholder="-1.3625" style="width:120px">
           </div>
         </div>
-        <div class="form-row" style="margin-bottom:12px">
-          <div class="form-group" style="flex:1">
-            <label>ALSA device name <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-            <input type="text" id="mic-f-device" placeholder="alsa_input.usb-..." spellcheck="false" style="font-family:var(--mono);font-size:0.82rem">
-          </div>
-        </div>
         <div class="btn-group">
           <button class="btn btn-primary btn-sm" id="btn-confirm-mic">Add</button>
           <button class="btn btn-outline btn-sm" onclick="hideMicAddForm()">Cancel</button>
@@ -1470,12 +1477,10 @@ async function renderSettings() {
     const mics = await api.get('/api/settings/mics');
     _micsState = mics;
     renderMicsRows();
-    _populateLocationMicDropdown(mics);
   } catch (err) { toast(err.message, 'error'); }
 
   document.getElementById('mqtt-mode').addEventListener('change', e => _mqttModeChanged(e.target.value));
   document.getElementById('btn-save-location').addEventListener('click', saveLocation);
-  document.getElementById('loc-mic-select').addEventListener('change', _onLocationMicPick);
   document.getElementById('btn-save-mqtt').addEventListener('click', saveMqtt);
   document.getElementById('btn-test-mqtt').addEventListener('click', testMqtt);
   document.getElementById('btn-save-mics').addEventListener('click', saveMics);
@@ -1561,31 +1566,9 @@ async function saveLocation() {
 /* ── Mics (monitoring locations) ── */
 let _micsState = [];
 
-function _populateLocationMicDropdown(mics) {
-  const row = document.getElementById('loc-mic-row');
-  const sel = document.getElementById('loc-mic-select');
-  if (!row || !sel || !mics.length) return;
-  sel.innerHTML = '<option value="">— select a microphone —</option>' +
-    mics.map((m, i) => `<option value="${i}">${escHtml(m.name)}</option>`).join('');
-  row.style.display = '';
-}
-
-function _onLocationMicPick() {
-  const sel = document.getElementById('loc-mic-select');
-  const i = parseInt(sel.value);
-  if (isNaN(i)) return;
-  const m = _micsState[i];
-  if (!m) return;
-  document.getElementById('loc-name').value = m.name;
-  document.getElementById('loc-lat').value  = m.latitude;
-  document.getElementById('loc-lon').value  = m.longitude;
-  sel.value = '';
-}
-
 function renderMicsRows() {
   const el = document.getElementById('mics-rows');
   if (!el) return;
-  _populateLocationMicDropdown(_micsState);
   if (!_micsState.length) {
     el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);margin-bottom:8px">No locations configured yet.</p>';
     return;
@@ -1594,7 +1577,7 @@ function renderMicsRows() {
     <div class="device-row" style="margin-bottom:6px">
       <div class="device-info">
         <div class="device-name">${escHtml(m.name)}</div>
-        <div class="device-meta">${m.latitude}, ${m.longitude}${m.device ? ' · ' + escHtml(m.device) : ''}</div>
+        <div class="device-meta">${m.latitude}, ${m.longitude}</div>
       </div>
       <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteMicRow(${i})">Remove</button>
     </div>`).join('');
@@ -1614,7 +1597,7 @@ function showMicAddForm() {
 function hideMicAddForm() {
   document.getElementById('mics-add-form').style.display = 'none';
   document.getElementById('btn-add-mic').style.display = '';
-  ['mic-f-name','mic-f-lat','mic-f-lon','mic-f-device'].forEach(id => {
+  ['mic-f-name','mic-f-lat','mic-f-lon'].forEach(id => {
     document.getElementById(id).value = '';
   });
 }
@@ -1623,12 +1606,9 @@ function confirmAddMic() {
   const name = document.getElementById('mic-f-name').value.trim();
   const lat  = parseFloat(document.getElementById('mic-f-lat').value);
   const lon  = parseFloat(document.getElementById('mic-f-lon').value);
-  const dev  = document.getElementById('mic-f-device').value.trim();
   if (!name) { toast('Name is required', 'warn'); return; }
   if (isNaN(lat) || isNaN(lon)) { toast('Valid latitude and longitude required', 'warn'); return; }
-  const entry = { name, latitude: lat, longitude: lon };
-  if (dev) entry.device = dev;
-  _micsState.push(entry);
+  _micsState.push({ name, latitude: lat, longitude: lon });
   hideMicAddForm();
   renderMicsRows();
 }
