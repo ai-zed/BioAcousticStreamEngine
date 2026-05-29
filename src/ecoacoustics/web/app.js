@@ -1444,7 +1444,6 @@ async function renderSettings() {
         </div>
       </div>
       <div class="btn-group" style="margin-top:14px">
-        <button class="btn btn-primary" id="btn-save-mics">Save locations</button>
         <button class="btn btn-outline btn-sm" id="btn-add-mic">+ Add location</button>
       </div>
     </div>
@@ -1483,7 +1482,6 @@ async function renderSettings() {
   document.getElementById('btn-save-location').addEventListener('click', saveLocation);
   document.getElementById('btn-save-mqtt').addEventListener('click', saveMqtt);
   document.getElementById('btn-test-mqtt').addEventListener('click', testMqtt);
-  document.getElementById('btn-save-mics').addEventListener('click', saveMics);
   document.getElementById('btn-add-mic').addEventListener('click', showMicAddForm);
   document.getElementById('btn-confirm-mic').addEventListener('click', confirmAddMic);
 }
@@ -1586,6 +1584,7 @@ function renderMicsRows() {
 function deleteMicRow(i) {
   _micsState.splice(i, 1);
   renderMicsRows();
+  saveMics();
 }
 
 function showMicAddForm() {
@@ -1611,17 +1610,16 @@ function confirmAddMic() {
   _micsState.push({ name, latitude: lat, longitude: lon });
   hideMicAddForm();
   renderMicsRows();
+  saveMics();
 }
 
 async function saveMics() {
-  const btn = document.getElementById('btn-save-mics');
-  btnLoad(btn, '⟳ Saving...');
   try {
     await api.post('/api/settings/mics', { mics: _micsState });
-    toast('Monitoring locations saved — restart pipeline to broadcast updated locations', 'success', 5000);
+    toast('Monitoring locations saved', 'success', 3000);
   } catch (err) {
-    toast(err.message, 'error', 6000);
-  } finally { btnDone(btn); }
+    toast(`Locations not saved: ${err.message}`, 'error', 6000);
+  }
 }
 
 function escHtml(s) {
