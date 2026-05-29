@@ -1293,6 +1293,14 @@ async function renderSettings() {
       <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">
         Used for BirdNET species filtering, CSV logs, and MQTT detection messages.
       </p>
+      <div class="form-row" id="loc-mic-row" style="display:none;margin-bottom:4px">
+        <div class="form-group" style="flex:1">
+          <label>Pick from configured mics</label>
+          <select id="loc-mic-select">
+            <option value="">— select a microphone —</option>
+          </select>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group" style="flex:2">
           <label>Location Name</label>
@@ -1457,15 +1465,17 @@ async function renderSettings() {
     _mqttModeChanged(m.mode || 'direct');
   } catch (err) { toast(err.message, 'error'); }
 
-  // Load mics
+  // Load mics (also populates location dropdown)
   try {
     const mics = await api.get('/api/settings/mics');
     _micsState = mics;
     renderMicsRows();
+    _populateLocationMicDropdown(mics);
   } catch (err) { toast(err.message, 'error'); }
 
   document.getElementById('mqtt-mode').addEventListener('change', e => _mqttModeChanged(e.target.value));
   document.getElementById('btn-save-location').addEventListener('click', saveLocation);
+  document.getElementById('loc-mic-select').addEventListener('change', _onLocationMicPick);
   document.getElementById('btn-save-mqtt').addEventListener('click', saveMqtt);
   document.getElementById('btn-test-mqtt').addEventListener('click', testMqtt);
   document.getElementById('btn-save-mics').addEventListener('click', saveMics);
@@ -1551,9 +1561,31 @@ async function saveLocation() {
 /* ── Mics (monitoring locations) ── */
 let _micsState = [];
 
+function _populateLocationMicDropdown(mics) {
+  const row = document.getElementById('loc-mic-row');
+  const sel = document.getElementById('loc-mic-select');
+  if (!row || !sel || !mics.length) return;
+  sel.innerHTML = '<option value="">— select a microphone —</option>' +
+    mics.map((m, i) => `<option value="${i}">${escHtml(m.name)}</option>`).join('');
+  row.style.display = '';
+}
+
+function _onLocationMicPick() {
+  const sel = document.getElementById('loc-mic-select');
+  const i = parseInt(sel.value);
+  if (isNaN(i)) return;
+  const m = _micsState[i];
+  if (!m) return;
+  document.getElementById('loc-name').value = m.name;
+  document.getElementById('loc-lat').value  = m.latitude;
+  document.getElementById('loc-lon').value  = m.longitude;
+  sel.value = '';
+}
+
 function renderMicsRows() {
   const el = document.getElementById('mics-rows');
   if (!el) return;
+  _populateLocationMicDropdown(_micsState);
   if (!_micsState.length) {
     el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);margin-bottom:8px">No locations configured yet.</p>';
     return;
