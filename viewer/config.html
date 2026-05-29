@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BASE Config</title>
+  <style>
+    :root {
+      --bg:      #0e1117;
+      --surface: #161b22;
+      --surface2:#1c2333;
+      --border:  #30363d;
+      --text:    #e6edf3;
+      --muted:   #768390;
+      --primary: #388bfd;
+      --brand:   #003d4c;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger:  #f85149;
+      --radius:  8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-base   { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.04em; }
+    .logo-sub    { font-weight: 300; font-size: 1.05rem; color: var(--muted); }
+    .header-tag {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+    }
+
+    /* Layout */
+    main {
+      max-width: 680px;
+      margin: 40px auto;
+      padding: 0 20px 80px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .page-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .page-desc code {
+      background: var(--surface2);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    /* Section */
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+    .section-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .section-body {
+      padding: 18px;
+    }
+
+    /* Mic rows */
+    .mic-list-empty {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 8px 0;
+    }
+    .mic-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .mic-row:last-child { border-bottom: none; }
+    .mic-row-info { flex: 1; min-width: 0; }
+    .mic-row-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .mic-row-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Form */
+    #add-form {
+      display: none;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 12px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 12px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--primary); }
+    input[type="text"]::placeholder { color: var(--muted); }
+    small {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    small code {
+      background: var(--bg);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    /* YAML output */
+    #yaml-output {
+      display: none;
+      margin-top: 24px;
+    }
+    .yaml-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      color: var(--success);
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .yaml-hint {
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn-primary  { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #5a9cf5; }
+    .btn-outline  { background: transparent; border-color: var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--surface2); }
+    .btn-danger   { background: transparent; border-color: var(--danger); color: var(--danger); }
+    .btn-danger:hover { background: rgba(248,81,73,0.1); }
+    .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+    .btn-success { background: var(--success); color: #fff; }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    /* Footer */
+    footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--brand);
+      border-top: 1px solid #005a6e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.03em;
+    }
+    .footer-divider { opacity: 0.5; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo-base">BASE</span><span class="logo-sub"> Config</span>
+  <span class="header-tag">Admin</span>
+</header>
+
+<main>
+  <h1>Monitoring Locations</h1>
+  <p class="page-desc">
+    Add each microphone with a friendly name and GPS coordinates. When done, click
+    <strong>Generate YAML</strong> and paste the output into <code>config/settings.yaml</code>
+    on your BASE server, then restart the pipeline.
+  </p>
+
+  <!-- Locations list -->
+  <section>
+    <div class="section-header">
+      <span class="section-title">Configured locations</span>
+      <button class="btn btn-outline btn-sm" onclick="showAddForm()">+ Add location</button>
+    </div>
+    <div class="section-body">
+      <div id="mic-list"></div>
+
+      <!-- Add form -->
+      <div id="add-form">
+        <div class="form-group">
+          <label>Friendly name</label>
+          <input type="text" id="f-name" placeholder="e.g. Great Lake">
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Latitude</label>
+            <input type="text" id="f-lat" placeholder="51.8403">
+          </div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="text" id="f-lon" placeholder="-1.3625">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ALSA device name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+          <input type="text" id="f-device" placeholder="alsa_input.usb-..." spellcheck="false">
+          <small>Run <code>pactl list sources short</code> on the BASE server to find device names.</small>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" onclick="addMic()">Add location</button>
+          <button class="btn btn-outline btn-sm" onclick="hideAddForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- YAML output -->
+  <div id="yaml-output">
+    <section>
+      <div class="section-header">
+        <span class="section-title">settings.yaml snippet</span>
+        <button class="btn btn-sm btn-outline" id="copy-btn" onclick="copyYaml()">Copy</button>
+      </div>
+      <div class="section-body">
+        <div class="yaml-box" id="yaml-text"></div>
+        <p class="yaml-hint">
+          Paste this <code>mics:</code> block into <code>config/settings.yaml</code> on your BASE server,
+          then restart the pipeline. The locations will be broadcast via MQTT on every connect.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <div class="btn-row" style="margin-top:8px">
+    <button class="btn btn-primary" onclick="generateYaml()">Generate YAML</button>
+  </div>
+</main>
+
+<footer>
+  <span>BioAcoustic Stream Engine (BASE)</span>
+  <span class="footer-divider">·</span>
+  <span>Blenheim Palace Innovation Team <span id="footer-year"></span></span>
+</footer>
+
+<script>
+const STORAGE_KEY = 'base-config-mics';
+
+function loadMics() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveMics(mics) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(mics));
+}
+
+function renderList() {
+  const list = document.getElementById('mic-list');
+  const mics = loadMics();
+  if (!mics.length) {
+    list.innerHTML = '<p class="mic-list-empty">No locations added yet.</p>';
+    return;
+  }
+  list.innerHTML = mics.map((m, i) => `
+    <div class="mic-row">
+      <div class="mic-row-info">
+        <span class="mic-row-name">${escHtml(m.name)}</span>
+        <span class="mic-row-meta">${m.latitude}, ${m.longitude}${m.device ? ' · ' + escHtml(m.device) : ''}</span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteMic(${i})">Remove</button>
+    </div>`).join('');
+}
+
+function deleteMic(i) {
+  const mics = loadMics();
+  mics.splice(i, 1);
+  saveMics(mics);
+  renderList();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+function showAddForm() {
+  document.getElementById('add-form').style.display = 'block';
+  document.getElementById('f-name').focus();
+}
+
+function hideAddForm() {
+  document.getElementById('add-form').style.display = 'none';
+  ['f-name','f-lat','f-lon','f-device'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function addMic() {
+  const name = document.getElementById('f-name').value.trim();
+  const lat  = parseFloat(document.getElementById('f-lat').value);
+  const lon  = parseFloat(document.getElementById('f-lon').value);
+  const dev  = document.getElementById('f-device').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+  if (isNaN(lat) || isNaN(lon)) { document.getElementById('f-lat').focus(); return; }
+  const entry = { name, latitude: lat, longitude: lon };
+  if (dev) entry.device = dev;
+  const mics = loadMics();
+  mics.push(entry);
+  saveMics(mics);
+  hideAddForm();
+  renderList();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+function generateYaml() {
+  const mics = loadMics();
+  if (!mics.length) return;
+  const lines = ['mics:'];
+  for (const m of mics) {
+    lines.push(`  - name: "${m.name}"`);
+    lines.push(`    latitude: ${m.latitude}`);
+    lines.push(`    longitude: ${m.longitude}`);
+    if (m.device) lines.push(`    device: "${m.device}"`);
+  }
+  document.getElementById('yaml-text').textContent = lines.join('\n');
+  document.getElementById('yaml-output').style.display = 'block';
+  document.getElementById('yaml-output').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyYaml() {
+  const text = document.getElementById('yaml-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied';
+    btn.classList.replace('btn-outline', 'btn-success');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.replace('btn-success', 'btn-outline');
+    }, 2000);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+renderList();
+</script>
+</body>
+</html>
