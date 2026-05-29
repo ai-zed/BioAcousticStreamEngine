@@ -38,10 +38,6 @@ class MicModel(BaseModel):
     longitude: float
 
 
-class MicsPayload(BaseModel):
-    mics: list[MicModel]
-
-
 class ClassifierDevicesModel(BaseModel):
     active: list[str]
     devices: dict[str, Any]   # classifier name → device index/name/None
@@ -206,13 +202,28 @@ def get_mics():
 
 
 @router.post("/settings/mics")
-def set_mics(body: MicsPayload):
+def add_mic(body: MicModel):
     with open(_SETTINGS) as f:
         cfg = yaml.safe_load(f)
-    cfg["mics"] = [m.model_dump() for m in body.mics]
+    mics = cfg.get("mics") or []
+    mics.append(body.model_dump())
+    cfg["mics"] = mics
     with open(_SETTINGS, "w") as f:
         yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
-    return {"updated": True}
+    return {"updated": True, "mics": mics}
+
+
+@router.delete("/settings/mics/{index}")
+def delete_mic(index: int):
+    with open(_SETTINGS) as f:
+        cfg = yaml.safe_load(f)
+    mics = cfg.get("mics") or []
+    if 0 <= index < len(mics):
+        mics.pop(index)
+    cfg["mics"] = mics
+    with open(_SETTINGS, "w") as f:
+        yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
+    return {"updated": True, "mics": mics}
 
 
 @router.get("/settings/classifiers")

@@ -1473,9 +1473,8 @@ async function renderSettings() {
 
   // Load mics — silently treat 404 as empty (older server without this route)
   try {
-    _micsState = await api.get('/api/settings/mics');
-    renderMicsRows();
-  } catch { renderMicsRows(); }
+    renderMicsRows(await api.get('/api/settings/mics'));
+  } catch { renderMicsRows([]); }
 
   document.getElementById('mqtt-mode').addEventListener('change', e => _mqttModeChanged(e.target.value));
   document.getElementById('btn-save-location').addEventListener('click', saveLocation);
@@ -1561,16 +1560,15 @@ async function saveLocation() {
 }
 
 /* ── Mics (monitoring locations) ── */
-let _micsState = [];
 
-function renderMicsRows() {
+function renderMicsRows(mics) {
   const el = document.getElementById('mics-rows');
   if (!el) return;
-  if (!_micsState.length) {
+  if (!mics.length) {
     el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);margin-bottom:8px">No locations configured yet.</p>';
     return;
   }
-  el.innerHTML = _micsState.map((m, i) => `
+  el.innerHTML = mics.map((m, i) => `
     <div class="device-row" style="margin-bottom:6px">
       <div class="device-info">
         <div class="device-name">${escHtml(m.name)}</div>
@@ -1580,10 +1578,14 @@ function renderMicsRows() {
     </div>`).join('');
 }
 
-function deleteMicRow(i) {
-  _micsState.splice(i, 1);
-  renderMicsRows();
-  saveMics();
+async function deleteMicRow(i) {
+  try {
+    const result = await api.del(`/api/settings/mics/${i}`);
+    renderMicsRows(result.mics || []);
+    toast('Location removed', 'success', 2000);
+  } catch (err) {
+    toast(`Could not remove: ${err.message}`, 'error', 5000);
+  }
 }
 
 function showMicAddForm() {
@@ -1600,24 +1602,23 @@ function hideMicAddForm() {
   });
 }
 
-function confirmAddMic() {
+async function confirmAddMic() {
   const name = document.getElementById('mic-f-name').value.trim();
   const lat  = parseFloat(document.getElementById('mic-f-lat').value);
   const lon  = parseFloat(document.getElementById('mic-f-lon').value);
   if (!name) { toast('Name is required', 'warn'); return; }
   if (isNaN(lat) || isNaN(lon)) { toast('Valid latitude and longitude required', 'warn'); return; }
-  _micsState.push({ name, latitude: lat, longitude: lon });
-  hideMicAddForm();
-  renderMicsRows();
-  saveMics();
-}
-
-async function saveMics() {
+  const btn = document.getElementById('btn-confirm-mic');
+  btnLoad(btn, '⟳');
   try {
-    await api.post('/api/settings/mics', { mics: _micsState });
-    toast('Monitoring locations saved', 'success', 3000);
+    const result = await api.post('/api/settings/mics', { name, latitude: lat, longitude: lon });
+    hideMicAddForm();
+    renderMicsRows(result.mics || []);
+    toast('Location added', 'success', 2000);
   } catch (err) {
-    toast(`Locations not saved: ${err.message}`, 'error', 6000);
+    toast(`Could not add: ${err.message}`, 'error', 5000);
+  } finally {
+    btnDone(btn);
   }
 }
 
