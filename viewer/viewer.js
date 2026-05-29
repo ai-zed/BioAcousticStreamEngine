@@ -173,12 +173,19 @@ function connect() {
     mqttClient.subscribe(prefix + '/detections', err => {
       if (err) console.warn('Subscribe failed:', err.message);
     });
+    mqttClient.subscribe(prefix + '/locations', err => {
+      if (err) console.warn('Subscribe locations failed:', err.message);
+    });
   });
 
   mqttClient.on('message', (_topic, payload) => {
     try {
-      const det = JSON.parse(payload.toString());
-      if (det.species_common) updateGallery(det);
+      const data = JSON.parse(payload.toString());
+      if (Array.isArray(data)) {
+        _setMicLocs(data);
+      } else if (data.species_common) {
+        updateGallery(data);
+      }
     } catch { /* ignore malformed */ }
   });
 
@@ -191,6 +198,13 @@ function connect() {
 function disconnect() {
   if (mqttClient) { mqttClient.end(true); mqttClient = null; }
   setConnStatus('disconnected', 'Disconnected');
+  _setMicLocs([]);
+}
+
+function _setMicLocs(locs) {
+  const el = document.getElementById('live-mic-locs');
+  if (!el) return;
+  el.textContent = locs.map(m => m.name).filter(Boolean).join(' · ');
 }
 
 function setConnStatus(state, label) {

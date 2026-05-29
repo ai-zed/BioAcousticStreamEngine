@@ -90,6 +90,17 @@ body {
 }
 #live-badge.live-on #live-loc-text { color: var(--text); }
 
+#live-mic-locs {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+#live-mic-locs:not(:empty)::before {
+  content: '·';
+  margin: 0 7px;
+  opacity: 0.45;
+}
+
 @media (max-width: 520px) {
   #live-loc-text { display: none; }
   #live-pill { font-size: 0.65rem; }
