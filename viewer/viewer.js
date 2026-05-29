@@ -285,10 +285,12 @@ function galleryCard(entry) {
         <span class="card-conf ${_confClass(bestConf)}">${pct}%</span>
       </div>
       <div class="card-info">
-        <div class="card-name">${det.species_common}</div>
+        <div class="card-name-row">
+          <span class="card-name">${det.species_common}</span>
+          ${det.location_name ? `<span class="card-loc-badge">📍 ${det.location_name}</span>` : ''}
+        </div>
         <div class="card-sci">${det.species_scientific || ''}</div>
         <div class="card-clf">${det.classifier || ''}</div>
-        ${det.location_name ? `<div class="card-location">◉ ${det.location_name}</div>` : ''}
         <div class="card-times">
           <span title="First detected">⬆ ${_fmtSeen(firstSeen?.date, firstSeen?.time)}</span>
           <span title="Last detected">⬇ ${_fmtSeen(lastSeen?.date,  lastSeen?.time)}</span>

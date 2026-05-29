@@ -241,8 +241,9 @@ body {
     background: linear-gradient(transparent, rgba(0,0,0,0.78));
     pointer-events: none;
   }
-  .card-name   { font-size: 0.72rem; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
-  .card-sci, .card-clf, .card-location, .card-times { display: none; }
+  .card-name     { font-size: 0.72rem; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+  .card-loc-badge { display: none; }
+  .card-sci, .card-clf, .card-times { display: none; }
 }
 
 /* Mobile: hidden by default, opens as centred modal */
@@ -384,11 +385,24 @@ body {
 }
 
 /* Card info */
-.card-info   { padding: 8px 10px 10px; }
-.card-name   { font-size: 0.82rem; font-weight: 600; }
+.card-info     { padding: 8px 10px 10px; }
+.card-name-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 1px;
+}
+.card-name     { font-size: 0.82rem; font-weight: 600; flex: 1; min-width: 0; }
+.card-loc-badge {
+  font-size: 0.60rem;
+  font-weight: 600;
+  color: var(--success);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .card-sci    { font-size: 0.67rem; color: var(--muted); font-style: italic; margin-top: 2px; }
 .card-clf    { font-size: 0.65rem; color: var(--muted); margin-top: 3px; }
-.card-location { font-size: 0.70rem; color: var(--success); font-weight: 600; margin-top: 2px; }
 .card-times  {
   display: flex;
   justify-content: space-between;
