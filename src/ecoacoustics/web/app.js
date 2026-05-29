@@ -1395,6 +1395,44 @@ async function renderSettings() {
       </div>
       <div id="mqtt-test-result" style="margin-top:10px;font-size:0.82rem"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Monitoring Locations ${helpBtn('mics')}</div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">
+        Each microphone with a friendly name and coordinates. Broadcast to subscribers via MQTT so the live viewer can label detections and pinpoint mics on a map.
+      </p>
+      <div id="mics-rows"></div>
+      <div id="mics-add-form" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label>Friendly name</label>
+            <input type="text" id="mic-f-name" placeholder="e.g. Great Lake">
+          </div>
+          <div class="form-group">
+            <label>Latitude</label>
+            <input type="number" id="mic-f-lat" step="0.0001" placeholder="51.8403" style="width:120px">
+          </div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="number" id="mic-f-lon" step="0.0001" placeholder="-1.3625" style="width:120px">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:12px">
+          <div class="form-group" style="flex:1">
+            <label>ALSA device name <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+            <input type="text" id="mic-f-device" placeholder="alsa_input.usb-..." spellcheck="false" style="font-family:var(--mono);font-size:0.82rem">
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary btn-sm" id="btn-confirm-mic">Add</button>
+          <button class="btn btn-outline btn-sm" onclick="hideMicAddForm()">Cancel</button>
+        </div>
+      </div>
+      <div class="btn-group" style="margin-top:14px">
+        <button class="btn btn-primary" id="btn-save-mics">Save locations</button>
+        <button class="btn btn-outline btn-sm" id="btn-add-mic">+ Add location</button>
+      </div>
+    </div>
   `;
 
   // Load location
@@ -1419,10 +1457,20 @@ async function renderSettings() {
     _mqttModeChanged(m.mode || 'direct');
   } catch (err) { toast(err.message, 'error'); }
 
+  // Load mics
+  try {
+    const mics = await api.get('/api/settings/mics');
+    _micsState = mics;
+    renderMicsRows();
+  } catch (err) { toast(err.message, 'error'); }
+
   document.getElementById('mqtt-mode').addEventListener('change', e => _mqttModeChanged(e.target.value));
   document.getElementById('btn-save-location').addEventListener('click', saveLocation);
   document.getElementById('btn-save-mqtt').addEventListener('click', saveMqtt);
   document.getElementById('btn-test-mqtt').addEventListener('click', testMqtt);
+  document.getElementById('btn-save-mics').addEventListener('click', saveMics);
+  document.getElementById('btn-add-mic').addEventListener('click', showMicAddForm);
+  document.getElementById('btn-confirm-mic').addEventListener('click', confirmAddMic);
 }
 
 function _mqttModeChanged(mode) {
@@ -1498,6 +1546,74 @@ async function saveLocation() {
   } catch (err) {
     toast(err.message, 'error', 6000);
   } finally { btnDone(btn); }
+}
+
+/* ── Mics (monitoring locations) ── */
+let _micsState = [];
+
+function renderMicsRows() {
+  const el = document.getElementById('mics-rows');
+  if (!el) return;
+  if (!_micsState.length) {
+    el.innerHTML = '<p style="font-size:0.82rem;color:var(--muted);margin-bottom:8px">No locations configured yet.</p>';
+    return;
+  }
+  el.innerHTML = _micsState.map((m, i) => `
+    <div class="device-row" style="margin-bottom:6px">
+      <div class="device-info">
+        <div class="device-name">${escHtml(m.name)}</div>
+        <div class="device-meta">${m.latitude}, ${m.longitude}${m.device ? ' · ' + escHtml(m.device) : ''}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteMicRow(${i})">Remove</button>
+    </div>`).join('');
+}
+
+function deleteMicRow(i) {
+  _micsState.splice(i, 1);
+  renderMicsRows();
+}
+
+function showMicAddForm() {
+  document.getElementById('mics-add-form').style.display = '';
+  document.getElementById('btn-add-mic').style.display = 'none';
+  document.getElementById('mic-f-name').focus();
+}
+
+function hideMicAddForm() {
+  document.getElementById('mics-add-form').style.display = 'none';
+  document.getElementById('btn-add-mic').style.display = '';
+  ['mic-f-name','mic-f-lat','mic-f-lon','mic-f-device'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function confirmAddMic() {
+  const name = document.getElementById('mic-f-name').value.trim();
+  const lat  = parseFloat(document.getElementById('mic-f-lat').value);
+  const lon  = parseFloat(document.getElementById('mic-f-lon').value);
+  const dev  = document.getElementById('mic-f-device').value.trim();
+  if (!name) { toast('Name is required', 'warn'); return; }
+  if (isNaN(lat) || isNaN(lon)) { toast('Valid latitude and longitude required', 'warn'); return; }
+  const entry = { name, latitude: lat, longitude: lon };
+  if (dev) entry.device = dev;
+  _micsState.push(entry);
+  hideMicAddForm();
+  renderMicsRows();
+}
+
+async function saveMics() {
+  const btn = document.getElementById('btn-save-mics');
+  btnLoad(btn, '⟳ Saving...');
+  try {
+    await api.post('/api/settings/mics', _micsState);
+    toast('Monitoring locations saved — restart pipeline to broadcast updated locations', 'success', 5000);
+  } catch (err) {
+    toast(err.message, 'error', 6000);
+  } finally { btnDone(btn); }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 /* ── Help system ── */
@@ -1597,6 +1713,17 @@ const HELP = {
       <li><strong>Bridge</strong> — BASE connects to a local Mosquitto broker, which forwards to a cloud broker. Good when using a fixed local IP on a private network.</li>
     </ul>
     <p>Use the <strong>Test Connection</strong> button to verify your broker credentials before starting a session.</p>`
+  },
+  mics: {
+    icon: '🎙', title: 'Monitoring Locations',
+    body: `<p>Monitoring Locations define each individual microphone deployed across the site — its friendly name, GPS coordinates, and optionally the ALSA device name used to record from it.</p>
+    <p><strong>Why configure locations?</strong></p>
+    <ul style="padding-left:16px;margin:8px 0">
+      <li>The full array is broadcast via MQTT every time the pipeline connects, so the live viewer and any connected map application immediately know where every mic is.</li>
+      <li>If you deploy multiple microphones around a large site, each detection can be pinpointed to the right mic — essential for understanding spatial patterns in species activity.</li>
+      <li>The optional ALSA device name links a location to a specific USB audio device so the right classifier is routed to the right microphone.</li>
+    </ul>
+    <p>Changes take effect on the next pipeline start.</p>`
   },
   location: {
     icon: '📍', title: 'Recording Location',

@@ -32,6 +32,13 @@ class LocationModel(BaseModel):
     longitude: float
 
 
+class MicModel(BaseModel):
+    name: str
+    latitude: float
+    longitude: float
+    device: Optional[str] = None
+
+
 class ClassifierDevicesModel(BaseModel):
     active: list[str]
     devices: dict[str, Any]   # classifier name → device index/name/None
@@ -186,6 +193,23 @@ async def test_mqtt():
         return result
     except Exception as exc:
         return {"connected": False, "error": str(exc)}
+
+
+@router.get("/settings/mics")
+def get_mics():
+    with open(_SETTINGS) as f:
+        cfg = yaml.safe_load(f)
+    return cfg.get("mics") or []
+
+
+@router.post("/settings/mics")
+def set_mics(body: list[MicModel]):
+    with open(_SETTINGS) as f:
+        cfg = yaml.safe_load(f)
+    cfg["mics"] = [m.model_dump(exclude_none=True) for m in body]
+    with open(_SETTINGS, "w") as f:
+        yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
+    return {"updated": True}
 
 
 @router.get("/settings/classifiers")
