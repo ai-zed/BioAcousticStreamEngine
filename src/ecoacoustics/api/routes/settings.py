@@ -1,10 +1,10 @@
 """API routes — location and system settings."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 import yaml
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -202,7 +202,7 @@ def get_mics():
 
 
 @router.post("/settings/mics")
-def set_mics(body: list[MicModel]):
+def set_mics(body: Annotated[list[MicModel], Body()]):
     with open(_SETTINGS) as f:
         cfg = yaml.safe_load(f)
     cfg["mics"] = [m.model_dump(exclude_none=True) for m in body]
