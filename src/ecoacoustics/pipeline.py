@@ -81,6 +81,16 @@ class Pipeline:
         mqtt_cfg = self._cfg.get("mqtt", {})
         loc_cfg = self._cfg.get("location", {})
 
+        # Build mic location list for the /locations broadcast.
+        # Prefer explicit mics[] list; fall back to single location: block.
+        mics_cfg = self._cfg.get("mics") or []
+        if not mics_cfg and loc_cfg.get("name"):
+            mics_cfg = [{
+                "name":      loc_cfg["name"],
+                "latitude":  loc_cfg.get("latitude"),
+                "longitude": loc_cfg.get("longitude"),
+            }]
+
         mqtt_publisher = None
         if mqtt_cfg.get("enabled", False):
             mqtt_publisher = MqttPublisher(
@@ -93,6 +103,7 @@ class Pipeline:
                 latitude=loc_cfg.get("latitude", bird_cfg.get("latitude")),
                 longitude=loc_cfg.get("longitude", bird_cfg.get("longitude")),
                 location_name=loc_cfg.get("name", ""),
+                mics=mics_cfg,
             )
 
         self._logger = DetectionLogger(

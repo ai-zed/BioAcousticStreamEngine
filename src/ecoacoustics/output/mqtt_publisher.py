@@ -4,8 +4,9 @@ MQTT publisher — broadcasts every detection as a JSON message.
 Topics published:
   {prefix}/detections            — every detection regardless of classifier
   {prefix}/detections/{classifier} — e.g. bioacoustics/detections/bird
+  {prefix}/locations             — retained array of mic locations (on connect)
 
-Payload (JSON):
+Detection payload (JSON):
   {
     "session_id": "a3f1b2c4",
     "window_name": "dawn_chorus",
@@ -20,6 +21,12 @@ Payload (JSON):
     "latitude": 51.8403,
     "longitude": -1.3625
   }
+
+Locations payload (JSON array, retained):
+  [
+    {"device": "alsa_input.usb-...", "name": "Great Lake", "latitude": 51.8403, "longitude": -1.3625},
+    {"device": "alsa_input.usb-...", "name": "Walled Garden", "latitude": 51.8410, "longitude": -1.3620}
+  ]
 
 Author: David Green, Blenheim Palace
 """
@@ -59,11 +66,13 @@ class MqttPublisher:
         latitude: float | None = None,
         longitude: float | None = None,
         location_name: str | None = None,
+        mics: list | None = None,
     ):
         self._prefix = topic_prefix.rstrip("/")
         self._lat = latitude
         self._lon = longitude
         self._location_name = location_name or ""
+        self._mics = mics or []
 
         self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self._client.on_connect = self._on_connect
@@ -79,6 +88,18 @@ class MqttPublisher:
             self._client.loop_start()
         except Exception as exc:
             _log.warning("MQTT: could not connect to %s:%d — %s", host, port, exc)
+
+    def publish_locations(self) -> None:
+        """Publish the mic location array to {prefix}/locations (retained).
+
+        Uses MQTT retain so any subscriber that connects later immediately
+        receives the current list without waiting for the next detection.
+        """
+        if not self._mics:
+            return
+        payload = json.dumps(self._mics, ensure_ascii=False)
+        self._client.publish(f"{self._prefix}/locations", payload, retain=True)
+        _log.info("MQTT: published %d mic location(s)", len(self._mics))
 
     def publish(self, det: Detection, session: Session, call_n: int) -> None:
         """Publish a single detection to the broker."""
@@ -110,6 +131,7 @@ class MqttPublisher:
     def _on_connect(self, client, userdata, flags, reason_code, properties) -> None:
         if str(reason_code) == "Success" or getattr(reason_code, "value", reason_code) == 0:
             _log.info("MQTT: connected")
+            self.publish_locations()
         else:
             _log.warning("MQTT: connection refused (reason %s)", reason_code)
 
