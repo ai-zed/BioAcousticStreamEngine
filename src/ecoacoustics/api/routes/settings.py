@@ -1,10 +1,10 @@
 """API routes — location and system settings."""
 
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 
 import yaml
-from fastapi import APIRouter, Body
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -36,6 +36,10 @@ class MicModel(BaseModel):
     name: str
     latitude: float
     longitude: float
+
+
+class MicsPayload(BaseModel):
+    mics: list[MicModel]
 
 
 class ClassifierDevicesModel(BaseModel):
@@ -202,10 +206,10 @@ def get_mics():
 
 
 @router.post("/settings/mics")
-def set_mics(body: Annotated[list[MicModel], Body()]):
+def set_mics(body: MicsPayload):
     with open(_SETTINGS) as f:
         cfg = yaml.safe_load(f)
-    cfg["mics"] = [m.model_dump(exclude_none=True) for m in body]
+    cfg["mics"] = [m.model_dump() for m in body.mics]
     with open(_SETTINGS, "w") as f:
         yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
     return {"updated": True}

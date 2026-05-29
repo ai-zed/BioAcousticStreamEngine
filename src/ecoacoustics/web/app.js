@@ -1617,7 +1617,7 @@ async function saveMics() {
   const btn = document.getElementById('btn-save-mics');
   btnLoad(btn, '⟳ Saving...');
   try {
-    await api.post('/api/settings/mics', _micsState);
+    await api.post('/api/settings/mics', { mics: _micsState });
     toast('Monitoring locations saved — restart pipeline to broadcast updated locations', 'success', 5000);
   } catch (err) {
     toast(err.message, 'error', 6000);
