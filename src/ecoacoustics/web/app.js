@@ -1471,12 +1471,11 @@ async function renderSettings() {
     _mqttModeChanged(m.mode || 'direct');
   } catch (err) { toast(err.message, 'error'); }
 
-  // Load mics (also populates location dropdown)
+  // Load mics — silently treat 404 as empty (older server without this route)
   try {
-    const mics = await api.get('/api/settings/mics');
-    _micsState = mics;
+    _micsState = await api.get('/api/settings/mics');
     renderMicsRows();
-  } catch (err) { toast(err.message, 'error'); }
+  } catch { renderMicsRows(); }
 
   document.getElementById('mqtt-mode').addEventListener('change', e => _mqttModeChanged(e.target.value));
   document.getElementById('btn-save-location').addEventListener('click', saveLocation);
